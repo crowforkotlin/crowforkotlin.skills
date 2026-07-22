@@ -105,15 +105,15 @@ install_links() {
         else
           warn "  $skill_name — 已存在其他链接(→ $current_target)，跳过"
         fi
-        ((skipped++))
+        skipped=$((skipped + 1))
       elif [[ -e "$dst" ]]; then
         # 已存在同名文件/目录（非链接）
         warn "  $skill_name — 已存在同名目录/文件，跳过"
-        ((skipped++))
+        skipped=$((skipped + 1))
       else
         ln -s "$src" "$dst"
         ok "  $skill_name → $src"
-        ((linked++))
+        linked=$((linked + 1))
       fi
     done
     echo ""
@@ -154,7 +154,7 @@ uninstall_links() {
       if [[ "$link_target" == "$SOURCE_DIR"/* ]]; then
         rm "$item"
         ok "  已移除: $(basename "$item")"
-        ((removed++))
+        removed=$((removed + 1))
       fi
     done
     echo ""
@@ -205,10 +205,10 @@ show_status() {
         else
           echo -e "  ${YELLOW}⚠${NC} $skill_name → $link_target (非本脚本管理)"
         fi
-        ((found++))
+        found=$((found + 1))
       elif [[ -e "$dst" ]]; then
         echo -e "  ${YELLOW}●${NC} $skill_name (本地目录/文件)"
-        ((found++))
+        found=$((found + 1))
       fi
     done
 
