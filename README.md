@@ -1,49 +1,84 @@
 # crowforkotlin.skills
 
-Symlink `~/.agents/skills/` to multiple AI coding tools (Claude, OpenCode, Qoder, Copilot).
+AI 技能（Skills）管理仓库 — 收集、安装、部署技能到各 AI 编码工具。
+
+## 仓库结构
+
+```
+.
+├── setup.sh                  # 部署管理器（复制 + 软链接）
+├── skills/                   # 技能目录
+│   └── git-commit/SKILL.md
+└── scripts/
+    ├── install-skill.sh      # 从 GitHub/本地安装技能
+    └── skills-links.sh       # 原始链接脚本（已整合到 setup.sh）
+```
 
 ## Quick Start
 
 ```bash
-chmod +x skills-links.sh
+chmod +x setup.sh
 
-# Install symlinks (skip duplicates)
-./skills-links.sh install
+# 一键部署（复制 skills 到 ~/.agents/skills/ + 软链接到各工具）
+./setup.sh
 
-# Remove symlinks
-./skills-links.sh uninstall
+# 仅复制
+./setup.sh cp
 
-# Check status
-./skills-links.sh status
+# 仅链接
+./setup.sh link
+
+# 取消链接
+./setup.sh unlink
+
+# 查看状态
+./setup.sh status
 ```
 
-## Target Directories
-
-| Tool      | Path                  |
-| --------- | --------------------- |
-| Claude    | `~/.claude/skills/`   |
-| OpenCode  | `~/.opencode/skills/` |
-| Qoder     | `~/.qoder/skills/`    |
-| Copilot   | `~/.copilot/skills/`  |
-
-## Custom Paths
-
-Override defaults via environment variables:
+## 安装开源技能
 
 ```bash
-SKILLS_SOURCE=~/.my-skills ./skills-links.sh install
-SKILLS_CLAUDE_DIR=~/.config/claude/skills ./skills-links.sh install
+# 从 GitHub 仓库安装
+./scripts/install-skill.sh https://github.com/user/awesome-skill
+
+# 从多技能仓库中安装指定技能
+./scripts/install-skill.sh https://github.com/user/skills-repo skill-name
+
+# 安装后自动部署
+./scripts/install-skill.sh https://github.com/user/awesome-skill --deploy
+
+# 从本地路径安装
+./scripts/install-skill.sh /path/to/skill-dir
 ```
 
-| Variable             | Default               |
-| -------------------- | --------------------- |
-| `SKILLS_SOURCE`      | `~/.agents/skills`    |
-| `SKILLS_CLAUDE_DIR`  | `~/.claude/skills`    |
-| `SKILLS_OPENCODE_DIR`| `~/.opencode/skills`  |
-| `SKILLS_QODER_DIR`   | `~/.qoder/skills`     |
-| `SKILLS_COPILOT_DIR` | `~/.copilot/skills`   |
+## 部署目标
+
+| Tool     | Path                 |
+| -------- | -------------------- |
+| Claude   | `~/.claude/skills/`  |
+| OpenCode | `~/.opencode/skills/`|
+| Qoder    | `~/.qoder/skills/`   |
+| Copilot  | `~/.copilot/skills/` |
+
+## 自定义路径
+
+通过环境变量覆盖默认配置：
+
+```bash
+SKILLS_SOURCE=~/.my-skills ./setup.sh deploy
+SKILLS_CLAUDE_DIR=~/.config/claude/skills ./setup.sh link
+```
+
+| Variable              | Default              |
+| --------------------- | -------------------- |
+| `SKILLS_SOURCE`       | `~/.agents/skills`   |
+| `SKILLS_CLAUDE_DIR`   | `~/.claude/skills`   |
+| `SKILLS_OPENCODE_DIR` | `~/.opencode/skills` |
+| `SKILLS_QODER_DIR`    | `~/.qoder/skills`    |
+| `SKILLS_COPILOT_DIR`  | `~/.copilot/skills`  |
 
 ## Requirements
 
-- Bash 4+ (for associative arrays)
+- Bash 4+（关联数组支持）
+- Git（install-skill.sh 需要）
 - Linux / macOS
