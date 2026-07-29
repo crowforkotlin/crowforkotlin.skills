@@ -27,12 +27,10 @@ REPO_SKILLS_DIR="$REPO_DIR/skills"
 SOURCE_DIR="${SKILLS_SOURCE:-$HOME/.agents/skills}"
 
 # 各工具的技能目录（可通过环境变量覆盖）
-declare -A TARGETS=(
-  [claude]="${SKILLS_CLAUDE_DIR:-$HOME/.claude/skills}"
-  [opencode]="${SKILLS_OPENCODE_DIR:-$HOME/.opencode/skills}"
-  [qoder]="${SKILLS_QODER_DIR:-$HOME/.qoder/skills}"
-  [copilot]="${SKILLS_COPILOT_DIR:-$HOME/.copilot/skills}"
-)
+SKILLS_CLAUDE_DIR="${SKILLS_CLAUDE_DIR:-$HOME/.claude/skills}"
+SKILLS_OPENCODE_DIR="${SKILLS_OPENCODE_DIR:-$HOME/.opencode/skills}"
+SKILLS_QODER_DIR="${SKILLS_QODER_DIR:-$HOME/.qoder/skills}"
+SKILLS_COPILOT_DIR="${SKILLS_COPILOT_DIR:-$HOME/.copilot/skills}"
 
 # ======================== 颜色 ========================
 
@@ -147,8 +145,15 @@ install_links() {
 
   local linked=0 skipped=0
 
-  for tool in $(echo "${!TARGETS[@]}" | tr ' ' '\n' | sort); do
-    local target_dir="${TARGETS[$tool]}"
+  # 遍历各工具
+  for tool in claude copilot opencode qoder; do
+    case "$tool" in
+      claude)     local target_dir="$SKILLS_CLAUDE_DIR" ;;
+      copilot)    local target_dir="$SKILLS_COPILOT_DIR" ;;
+      opencode)   local target_dir="$SKILLS_OPENCODE_DIR" ;;
+      qoder)      local target_dir="$SKILLS_QODER_DIR" ;;
+    esac
+
     info "处理 [$tool] → $target_dir"
 
     mkdir -p "$target_dir"
@@ -196,8 +201,14 @@ uninstall_links() {
 
   local removed=0
 
-  for tool in $(echo "${!TARGETS[@]}" | tr ' ' '\n' | sort); do
-    local target_dir="${TARGETS[$tool]}"
+  # 遍历各工具
+  for tool in claude copilot opencode qoder; do
+    case "$tool" in
+      claude)     local target_dir="$SKILLS_CLAUDE_DIR" ;;
+      copilot)    local target_dir="$SKILLS_COPILOT_DIR" ;;
+      opencode)   local target_dir="$SKILLS_OPENCODE_DIR" ;;
+      qoder)      local target_dir="$SKILLS_QODER_DIR" ;;
+    esac
 
     if [[ ! -d "$target_dir" ]]; then
       continue
@@ -245,8 +256,15 @@ show_status() {
   info "技能列表 (${#skills[@]}): ${skills[*]:-无}"
   echo ""
 
-  for tool in $(echo "${!TARGETS[@]}" | tr ' ' '\n' | sort); do
-    local target_dir="${TARGETS[$tool]}"
+  # 遍历各工具
+  for tool in claude copilot opencode qoder; do
+    case "$tool" in
+      claude)     local target_dir="$SKILLS_CLAUDE_DIR" ;;
+      copilot)    local target_dir="$SKILLS_COPILOT_DIR" ;;
+      opencode)   local target_dir="$SKILLS_OPENCODE_DIR" ;;
+      qoder)      local target_dir="$SKILLS_QODER_DIR" ;;
+    esac
+
     echo -e "${BLUE}[$tool]${NC} $target_dir"
 
     if [[ ! -d "$target_dir" ]]; then
