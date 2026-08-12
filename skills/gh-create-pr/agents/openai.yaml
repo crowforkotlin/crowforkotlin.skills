@@ -1,0 +1,4 @@
+interface:
+  display_name: "Create GitHub PR"
+  short_description: "Inspect changes and create verified GitHub PRs"
+  default_prompt: "Use $gh-create-pr to inspect the current branch, draft accurate PR metadata, and create the pull request."
