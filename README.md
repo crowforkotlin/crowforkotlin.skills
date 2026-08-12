@@ -8,7 +8,9 @@ AI 技能（Skills）管理仓库 — 收集、安装、部署技能到各 AI �
 .
 ├── setup.sh                  # 部署管理器（复制 + 软链接）
 ├── skills/                   # 技能目录
-│   └── git-commit/SKILL.md
+│   ├── git-commit-en/SKILL.md
+│   ├── git-commit-zh/SKILL.md
+│   └── input-optimizer/SKILL.md
 └── scripts/
     ├── install-skill.sh      # 从 GitHub/本地安装技能
     └── skills-links.sh       # 原始链接脚本（已整合到 setup.sh）
