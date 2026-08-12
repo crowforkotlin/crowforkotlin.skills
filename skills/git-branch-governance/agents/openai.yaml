@@ -1,0 +1,4 @@
+interface:
+  display_name: "Git Branch Governance"
+  short_description: "Define practical Git branching policies"
+  default_prompt: "Use $git-branch-governance to design a branching policy for this repository."

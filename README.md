@@ -10,6 +10,7 @@ AI 技能（Skills）管理仓库 — 收集、安装、部署技能到各 AI �
 ├── skills/                   # 技能目录
 │   ├── git-commit-en/SKILL.md
 │   ├── git-commit-zh/SKILL.md
+│   ├── git-branch-governance/SKILL.md
 │   └── input-optimizer/SKILL.md
 └── scripts/
     ├── install-skill.sh      # 从 GitHub/本地安装技能
