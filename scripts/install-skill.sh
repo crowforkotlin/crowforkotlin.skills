@@ -334,9 +334,9 @@ main() {
   if [[ "$do_deploy" == true ]]; then
     info "===== 自动部署 ====="
     echo ""
-    bash "$REPO_DIR/setup.sh" deploy
+    bash "$REPO_DIR/skills.sh" deploy
   else
-    info "提示: 运行 './setup.sh deploy' 将技能部署到各 AI 工具目录"
+    info "提示: 运行 './skills.sh deploy' 将技能部署到各 AI 工具目录"
   fi
 }
 

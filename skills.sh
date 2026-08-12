@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
 #
-# setup.sh — AI 技能安装管理器
+# skills.sh — AI 技能安装管理器
 #
 # 将本仓库中的 skills 复制到 ~/.agents/skills/ 并软链接到各 AI 工具目录
 #
 # 用法:
-#   ./setup.sh              # 默认: 复制 skills + 安装软链接
-#   ./setup.sh link         # 仅安装软链接
-#   ./setup.sh unlink       # 取消软链接
-#   ./setup.sh status       # 查看链接状态
-#   ./setup.sh cp           # 仅复制 skills 到 ~/.agents/skills/
-#   ./setup.sh deploy       # 部署 skills（复制 + 链接）
+#   ./skills.sh              # 默认: 复制 skills + 安装软链接
+#   ./skills.sh link         # 仅安装软链接
+#   ./skills.sh unlink       # 取消全部受管理的软链接
+#   ./skills.sh remove-skill <name> [--force] # 删除指定技能及其软链接
+#   ./skills.sh status       # 查看链接状态
+#   ./skills.sh cp           # 仅复制 skills 到 ~/.agents/skills/
+#   ./skills.sh deploy       # 部署 skills（复制 + 链接）
 #
 
 set -euo pipefail
@@ -42,10 +43,10 @@ NC='\033[0m' # No Color
 
 # ======================== 函数 ========================
 
-info() { echo -e "${BLUE}[INFO]${NC} $*"; }
-ok() { echo -e "${GREEN}[OK]${NC} $*"; }
-warn() { echo -e "${YELLOW}[SKIP]${NC} $*"; }
-err() { echo -e "${RED}[ERR]${NC} $*"; }
+info() { printf '%b[INFO]%b %s\n' "$BLUE" "$NC" "$*"; }
+ok() { printf '%b[OK]%b %s\n' "$GREEN" "$NC" "$*"; }
+warn() { printf '%b[SKIP]%b %s\n' "$YELLOW" "$NC" "$*"; }
+err() { printf '%b[ERR]%b %s\n' "$RED" "$NC" "$*"; }
 
 usage() {
   cat <<EOF
@@ -56,7 +57,8 @@ usage() {
   deploy        部署 skills（复制 + 链接），等同于默认行为
   cp            仅复制本仓库 skills 到 ~/.agents/skills/
   link          仅安装软链接（将 ~/.agents/skills/ 链接到各工具目录）
-  unlink        取消软链接（仅移除指向源目录的符号链接）
+  unlink        取消全部受管理的软链接（仅移除指向源目录的符号链接）
+  remove-skill  删除指定技能及其受管理的符号链接；--force 删除同名的其他符号链接
   status        查看各工具目录的链接状态
 
 环境变量:
@@ -71,6 +73,8 @@ usage() {
   $(basename "$0") cp           # 仅复制
   $(basename "$0") link         # 仅链接
   $(basename "$0") unlink       # 取消链接
+  $(basename "$0") remove-skill git-commit          # 删除指定技能
+  $(basename "$0") remove-skill git-commit --force  # 删除同名的所有符号链接
   $(basename "$0") status       # 查看状态
 EOF
 }
@@ -239,6 +243,60 @@ uninstall_links() {
   fi
 }
 
+# 删除指定技能的源目录以及指向该目录的受管理软链接
+remove_skill() {
+  local skill_name="${1:-}"
+  local force="${2:-}"
+
+  if [[ -z "$skill_name" || "$skill_name" == .* || "$skill_name" == */* ]]; then
+    err "技能名称必须是不含路径分隔符的目录名"
+    exit 1
+  fi
+
+  if [[ -n "$force" && "$force" != "--force" ]]; then
+    err "未知选项: $force"
+    exit 1
+  fi
+
+  local source_skill_dir="$SOURCE_DIR/$skill_name"
+  local removed_links=0
+  for tool in claude copilot opencode qoder; do
+    case "$tool" in
+      claude)  local target_dir="$SKILLS_CLAUDE_DIR" ;;
+      copilot) local target_dir="$SKILLS_COPILOT_DIR" ;;
+      opencode) local target_dir="$SKILLS_OPENCODE_DIR" ;;
+      qoder)   local target_dir="$SKILLS_QODER_DIR" ;;
+    esac
+
+    local link_path="$target_dir/$skill_name"
+    if [[ -L "$link_path" ]]; then
+      local link_target
+      link_target=$(readlink "$link_path")
+      if [[ "$link_target" == "$source_skill_dir" ]]; then
+        rm "$link_path"
+        ok "  已移除链接: $tool/$skill_name"
+        removed_links=$((removed_links + 1))
+      elif [[ "$force" == "--force" ]]; then
+        rm "$link_path"
+        ok "  已强制移除链接: $tool/$skill_name"
+        removed_links=$((removed_links + 1))
+      else
+        warn "  $tool/$skill_name 指向其他位置，未删除"
+      fi
+    elif [[ -e "$link_path" ]]; then
+      warn "  $tool/$skill_name 不是受管理的链接，未删除"
+    fi
+  done
+
+  if [[ -d "$source_skill_dir" ]]; then
+    rm -rf "$source_skill_dir"
+    ok "已删除技能源目录: $source_skill_dir"
+  else
+    info "技能源目录不存在，仅检查并清理残留链接"
+  fi
+  info "完成! 已移除链接: $removed_links"
+}
+
 # 查看状态
 show_status() {
   info "源目录: $SOURCE_DIR"
@@ -328,8 +386,11 @@ main() {
   link)
     install_links
     ;;
-  unlink | uninstall | remove | rm)
+  unlink | uninstall | rm)
     uninstall_links
+    ;;
+  remove-skill)
+    remove_skill "${2:-}" "${3:-}"
     ;;
   status | list | ls)
     show_status

@@ -6,35 +6,41 @@ AI 技能（Skills）管理仓库 — 收集、安装、部署技能到各 AI �
 
 ```
 .
-├── setup.sh                  # 部署管理器（复制 + 软链接）
+├── skills.sh                 # 部署管理器（复制 + 软链接）
 ├── skills/                   # 技能目录
 │   ├── git-commit-en/SKILL.md
 │   ├── git-commit-zh/SKILL.md
 │   └── input-optimizer/SKILL.md
 └── scripts/
     ├── install-skill.sh      # 从 GitHub/本地安装技能
-    └── skills-links.sh       # 原始链接脚本（已整合到 setup.sh）
+    └── skills-links.sh       # 原始链接脚本（已整合到 skills.sh）
 ```
 
 ## Quick Start
 
 ```bash
-chmod +x setup.sh
+chmod +x skills.sh
 
 # 一键部署（复制 skills 到 ~/.agents/skills/ + 软链接到各工具）
-./setup.sh
+./skills.sh
 
 # 仅复制
-./setup.sh cp
+./skills.sh cp
 
 # 仅链接
-./setup.sh link
+./skills.sh link
 
 # 取消链接
-./setup.sh unlink
+./skills.sh unlink
+
+# 删除指定的受管理技能及其软链接
+./skills.sh remove-skill git-commit
+
+# 强制删除同名的符号链接（不删除同名目录）
+./skills.sh remove-skill git-commit --force
 
 # 查看状态
-./setup.sh status
+./skills.sh status
 ```
 
 ## 安装开源技能
@@ -67,8 +73,8 @@ chmod +x setup.sh
 通过环境变量覆盖默认配置：
 
 ```bash
-SKILLS_SOURCE=~/.my-skills ./setup.sh deploy
-SKILLS_CLAUDE_DIR=~/.config/claude/skills ./setup.sh link
+SKILLS_SOURCE=~/.my-skills ./skills.sh deploy
+SKILLS_CLAUDE_DIR=~/.config/claude/skills ./skills.sh link
 ```
 
 | Variable              | Default              |
