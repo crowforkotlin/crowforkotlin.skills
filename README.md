@@ -46,7 +46,23 @@ chmod +x skills.sh
 
 # 查看状态
 ./skills.sh status
+
+# 仅检查仓库技能是否已同步到 ~/.agents/skills/，不修改文件
+./skills.sh check
 ```
+
+## 更新技能
+
+拉取仓库更新后，先检查本地部署状态，再执行部署：
+
+```bash
+git pull
+./skills.sh check
+./skills.sh deploy
+```
+
+`deploy` 会逐个比较仓库与 `~/.agents/skills/` 中的技能内容，并明确报告“新增”、“已更新”和“已是最新”。
+后续显示的“链接已就绪”表示软链接已经指向该源目录，不需要重建；源目录内容更新后，各 AI 工具会自动使用更新后的内容。
 
 ## 安装开源技能
 
@@ -94,4 +110,5 @@ SKILLS_CLAUDE_DIR=~/.config/claude/skills ./skills.sh link
 
 - Bash 4+（关联数组支持）
 - Git（install-skill.sh 需要）
+- diff（用于比较技能内容，macOS / Linux 系统通常自带）
 - Linux / macOS
