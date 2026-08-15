@@ -32,12 +32,13 @@ Generate exactly one Chinese commit message from the repository state. Do not mo
    | Build or dependency tooling | `build` |
    | Other maintenance | `chore` |
 
-7. Write the message using the format `<type>(<scope>): <subject>`. Omit the scope when no stable module or component is clearly affected.
+7. Always write the message using the format `<type>(<scope>): <subject>`; `<scope>` is required. Select the narrowest stable English module or component scope supported by the diff. If no stable module or component is clear, use a concise English scope for the affected area; use `workspace` only when no narrower scope is supported by the evidence. A scope may contain only lowercase ASCII letters, digits, and hyphens (for example, `auth`, `photo-grid`, or `ios-build`); never omit it.
 8. Output only the message in one Markdown code block. Do not add a title, explanation, analysis, citation, or extra blank line.
 
 ## Message Rules
 
-- Write every message line in Chinese, including the subject, bullets, and detail paragraph. Keep the conventional type token (`feat`, `fix`, `refactor`, `config`, `docs`, `style`, `build`, or `chore`) unchanged.
+- Write the subject, bullets, and detail paragraph in Chinese. Write `<type>` and `<scope>` in English; keep the conventional type token (`feat`, `fix`, `refactor`, `config`, `docs`, `style`, `build`, or `chore`) unchanged.
+- Always include `<scope>`. Write it as a concise English module, component, or affected-area identifier using only lowercase ASCII letters, digits, and hyphens. Never use Chinese, pinyin, or translated prose as a scope. Use `workspace` when the evidence does not support a narrower English scope.
 - Use an imperative, direct subject after the colon and omit a terminal period.
 - Keep the subject specific and concise; describe the purpose rather than listing file names.
 - Add 2-5 `- ` bullets for normal or complex changes. Each bullet must identify a material change supported by the diff.
@@ -55,4 +56,10 @@ Generate exactly one Chinese commit message from the repository state. Do not mo
 - <material change>
 
 <brief implementation or impact summary>
+```
+
+For example:
+
+```text
+fix(photo-grid): 修复相册网格滚动时的重复加载
 ```
