@@ -9,7 +9,8 @@
 #   ./skills.sh link         # 仅安装软链接
 #   ./skills.sh unlink       # 取消全部受管理的软链接
 #   ./skills.sh remove-skill <name> [--force] # 删除指定技能及其软链接
-#   ./skills.sh status       # 查看链接状态
+#   ./skills.sh status       # 查看同步和链接状态
+#   ./skills.sh check        # 仅检查仓库技能是否已同步
 #   ./skills.sh cp           # 仅复制 skills 到 ~/.agents/skills/
 #   ./skills.sh deploy       # 部署 skills（复制 + 链接）
 #
@@ -46,6 +47,7 @@ NC='\033[0m' # No Color
 info() { printf '%b[INFO]%b %s\n' "$BLUE" "$NC" "$*"; }
 ok() { printf '%b[OK]%b %s\n' "$GREEN" "$NC" "$*"; }
 warn() { printf '%b[SKIP]%b %s\n' "$YELLOW" "$NC" "$*"; }
+notice() { printf '%b[WARN]%b %s\n' "$YELLOW" "$NC" "$*"; }
 err() { printf '%b[ERR]%b %s\n' "$RED" "$NC" "$*"; }
 
 usage() {
@@ -59,7 +61,8 @@ usage() {
   link          仅安装软链接（将 ~/.agents/skills/ 链接到各工具目录）
   unlink        取消全部受管理的软链接（仅移除指向源目录的符号链接）
   remove-skill  删除指定技能及其受管理的符号链接；--force 删除同名的其他符号链接
-  status        查看各工具目录的链接状态
+  status        查看仓库技能同步状态和各工具目录的链接状态
+  check         仅检查仓库 skills 与目标目录是否一致，不修改文件
 
 环境变量:
   SKILLS_SOURCE        目标技能目录 (默认: ~/.agents/skills)
@@ -76,7 +79,13 @@ usage() {
   $(basename "$0") remove-skill git-commit          # 删除指定技能
   $(basename "$0") remove-skill git-commit --force  # 删除同名的所有符号链接
   $(basename "$0") status       # 查看状态
+  $(basename "$0") check        # 检查是否有待部署的技能更新
 EOF
+}
+
+# 比较两个技能目录的内容。diff 仅在目录内容不同或读取失败时返回非零。
+skill_dirs_match() {
+  diff -qr "$1" "$2" >/dev/null 2>&1
 }
 
 # 复制 skills 到 ~/.agents/skills/
@@ -104,25 +113,33 @@ copy_skills() {
 
   mkdir -p "$SOURCE_DIR"
 
-  local copied=0
+  local added=0 updated=0 current=0 skipped=0
   for skill_name in "${skills[@]}"; do
     local src="$REPO_SKILLS_DIR/$skill_name"
     local dst="$SOURCE_DIR/$skill_name"
 
-    if [[ -d "$dst" ]]; then
-      # 已存在，覆盖更新
-      rm -rf "$dst"
-      cp -r "$src" "$dst"
-      ok "  $skill_name — 已更新"
+    if [[ -e "$dst" || -L "$dst" ]]; then
+      if [[ ! -d "$dst" ]]; then
+        warn "  $skill_name — 目标不是目录，跳过"
+        skipped=$((skipped + 1))
+      elif skill_dirs_match "$src" "$dst"; then
+        info "  $skill_name — 已是最新"
+        current=$((current + 1))
+      else
+        rm -rf "$dst"
+        cp -r "$src" "$dst"
+        ok "  $skill_name — 已更新"
+        updated=$((updated + 1))
+      fi
     else
       cp -r "$src" "$dst"
       ok "  $skill_name — 已复制"
+      added=$((added + 1))
     fi
-    copied=$((copied + 1))
   done
 
   echo ""
-  info "复制完成! 共处理 $copied 个技能"
+  info "同步完成! 新增: $added, 更新: $updated, 已是最新: $current, 跳过: $skipped"
 }
 
 # 安装软链接
@@ -147,7 +164,7 @@ install_links() {
   info "发现 ${#skills[@]} 个技能: ${skills[*]}"
   echo ""
 
-  local linked=0 skipped=0
+  local linked=0 existing=0 skipped=0
 
   # 遍历各工具
   for tool in claude copilot opencode qoder; do
@@ -171,11 +188,12 @@ install_links() {
         local current_target
         current_target=$(readlink "$dst")
         if [[ "$current_target" == "$src" ]]; then
-          warn "  $skill_name — 已链接，跳过"
+          ok "  $skill_name — 链接已就绪（内容来自源目录）"
+          existing=$((existing + 1))
         else
           warn "  $skill_name — 已存在其他链接(→ $current_target)，跳过"
+          skipped=$((skipped + 1))
         fi
-        skipped=$((skipped + 1))
       elif [[ -e "$dst" ]]; then
         # 已存在同名文件/目录（非链接）
         warn "  $skill_name — 已存在同名目录/文件，跳过"
@@ -189,7 +207,7 @@ install_links() {
     echo ""
   done
 
-  info "完成! 新建链接: $linked, 跳过: $skipped"
+  info "完成! 新建链接: $linked, 已有链接: $existing, 跳过: $skipped"
 }
 
 # 取消软链接
@@ -297,8 +315,75 @@ remove_skill() {
   info "完成! 已移除链接: $removed_links"
 }
 
+# 查看仓库 skills 与目标目录的同步状态（不修改文件）
+show_sync_status() {
+  if [[ ! -d "$REPO_SKILLS_DIR" ]]; then
+    err "仓库 skills 目录不存在: $REPO_SKILLS_DIR"
+    exit 1
+  fi
+
+  info "===== 技能同步状态 ====="
+  info "仓库 skills 目录: $REPO_SKILLS_DIR"
+  info "目标目录: $SOURCE_DIR"
+
+  local skills=()
+  for skill in "$REPO_SKILLS_DIR"/*/; do
+    [[ -d "$skill" ]] && skills+=("$(basename "$skill")")
+  done
+
+  if [[ ${#skills[@]} -eq 0 ]]; then
+    notice "仓库 skills 目录中没有技能文件夹: $REPO_SKILLS_DIR"
+    return
+  fi
+
+  if [[ ! -d "$SOURCE_DIR" ]]; then
+    notice "目标目录不存在，${#skills[@]} 个仓库技能尚未部署"
+    info "运行 './$(basename "$0") deploy' 进行部署"
+    return
+  fi
+
+  local current=0 outdated=0 missing=0 invalid=0 local_only=0
+  for skill_name in "${skills[@]}"; do
+    local src="$REPO_SKILLS_DIR/$skill_name"
+    local dst="$SOURCE_DIR/$skill_name"
+
+    if [[ ! -e "$dst" && ! -L "$dst" ]]; then
+      notice "  $skill_name — 尚未部署"
+      missing=$((missing + 1))
+    elif [[ ! -d "$dst" ]]; then
+      notice "  $skill_name — 目标不是目录"
+      invalid=$((invalid + 1))
+    elif skill_dirs_match "$src" "$dst"; then
+      ok "  $skill_name — 已是最新"
+      current=$((current + 1))
+    else
+      notice "  $skill_name — 内容有更新待部署"
+      outdated=$((outdated + 1))
+    fi
+  done
+
+  for installed_skill in "$SOURCE_DIR"/*/; do
+    [[ -d "$installed_skill" ]] || continue
+    local skill_name
+    skill_name=$(basename "$installed_skill")
+    if [[ ! -d "$REPO_SKILLS_DIR/$skill_name" ]]; then
+      info "  $skill_name — 仅存在于目标目录（未由当前仓库管理）"
+      local_only=$((local_only + 1))
+    fi
+  done
+
+  echo ""
+  info "检查完成! 已是最新: $current, 待更新: $outdated, 未部署: $missing, 异常: $invalid, 本地独有: $local_only"
+  if [[ $((outdated + missing + invalid)) -gt 0 ]]; then
+    info "运行 './$(basename "$0") deploy' 同步仓库中的技能更新"
+  fi
+}
+
 # 查看状态
 show_status() {
+  show_sync_status
+  echo ""
+  info "===== 软链接状态 ====="
   info "源目录: $SOURCE_DIR"
 
   if [[ ! -d "$SOURCE_DIR" ]]; then
@@ -391,6 +476,9 @@ main() {
     ;;
   remove-skill)
     remove_skill "${2:-}" "${3:-}"
+    ;;
+  check | verify)
+    show_sync_status
     ;;
   status | list | ls)
     show_status
