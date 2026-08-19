@@ -1,0 +1,4 @@
+interface:
+  display_name: "Commit and Create PR"
+  short_description: "Commit changes and open a verified GitHub PR"
+  default_prompt: "Use $gh-commit-pr to put the current repository changes on a new branch, create the default English commit, and open a verified GitHub pull request."

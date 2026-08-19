@@ -11,6 +11,9 @@ AI 技能（Skills）管理仓库 — 收集、安装、部署技能到各 AI �
 │   ├── git-commit-en/SKILL.md
 │   ├── git-commit-zh/SKILL.md
 │   ├── git-branch-governance/SKILL.md
+│   ├── gh-commit-pr/
+│   │   ├── SKILL.md
+│   │   └── agents/openai.yaml
 │   ├── gh-create-pr/
 │   │   ├── SKILL.md
 │   │   ├── agents/openai.yaml
