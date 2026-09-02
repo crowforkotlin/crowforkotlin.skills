@@ -1,0 +1,4 @@
+interface:
+  display_name: "Direct Engineering Communication"
+  short_description: "Use concrete language and report verifiable work"
+  default_prompt: "Use $direct-engineering-communication to implement the request and report only concrete, verified results."

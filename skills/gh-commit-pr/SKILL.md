@@ -1,86 +1,88 @@
 ---
 name: gh-commit-pr
-description: Create a new governed Git branch for existing repository changes, create a local English or Chinese commit when needed, push the branch, open and verify a GitHub pull request, and summarize the result. Use when the user invokes $gh-commit-pr or explicitly requests one end-to-end workflow that creates a new branch from current uncommitted or committed work and opens a PR. Default to English commits unless the user explicitly requests zh or a Chinese commit message. Do not use for commit-only requests or PR creation on an existing branch.
+description: Create a new Git branch from the current repository changes, create one local English or Chinese commit when needed, push the branch, open one GitHub pull request, and verify the result. Use when the user invokes $gh-commit-pr or explicitly requests this complete branch-to-commit-to-PR operation. Use English commits by default and Chinese commits only when explicitly requested. Do not use for commit-only requests or for creating a PR on an existing branch.
 ---
 
 # Commit Changes And Create A GitHub PR
 
-Run the complete branch-to-PR workflow. Invocation authorizes creating one local branch, creating one local commit when uncommitted changes exist, making an ordinary non-force push, and creating one pull request. It does not authorize amending, rebasing, resetting, force-pushing, merging, closing requests, deleting branches, changing repository settings, or discarding changes.
+Run the complete local branch, commit, push, and pull request operation only after an explicit end-to-end request. One invocation permits one new local branch, one new local commit when uncommitted changes exist, one ordinary non-force push, and one pull request. It does not permit amending, rebasing, resetting, force-pushing, merging, closing, deleting, changing repository settings, or discarding changes.
 
-## Require Dependent Skills
+## Load Required Skills
 
-Before running any repository-mutating command, confirm that these exact skills are installed, available to the current agent, and readable through the client's skill mechanism:
+Before any repository-changing command, load these exact skills:
 
 - `$git-branch-governance`
-- `$git-commit-en`
-- `$git-commit-zh`
+- `$git-commit-en` or `$git-commit-zh`
 - `$gh-create-pr`
 
-Resolve each dependency by its skill name through the client's skill mechanism. If the client cannot activate a dependency by name, locate that exact skill's `SKILL.md` in the configured skill directories and read it directly. Do not infer availability from a directory name alone. If any required skill is missing or unreadable by either route, stop without creating a branch, commit, push, or PR, and tell the user exactly which skill is unavailable. Read the complete `SKILL.md` for `$git-branch-governance`, `$gh-create-pr`, and the selected commit skill before continuing. Follow each dependency's constraints during its phase; do not treat this skill's summary as a replacement for that dependency.
+Resolve each name through the client's skill mechanism. If that is unavailable, read the matching `SKILL.md` from a configured skill directory. Do not infer that a dependency is available from a directory name. Stop before mutation if a required skill cannot be loaded. Read the complete branch, PR, and selected commit skill instructions.
 
 ## Select Commit Language
 
-- Select `$git-commit-zh` only when the user explicitly requests `zh`, `中文提交`, or a Chinese commit message. The surrounding conversation language alone does not select Chinese.
-- Select `$git-commit-en` when the user explicitly requests `en` or English, and by default when no language is specified.
-- If the request explicitly contains conflicting language requirements, stop and ask the user to choose one language before mutating the repository.
+- Use `$git-commit-zh` only when the user explicitly requests `zh`, a Chinese commit, or Chinese commit text.
+- Use `$git-commit-en` when the user explicitly requests English or when no language is specified.
+- Stop and ask the user to choose one language when the request contains conflicting language instructions.
 
-## Run Preflight Checks
+## Run Read-Only Preflight
 
-Complete all checks before creating the branch:
+Finish every check below before creating the branch:
 
-1. Require `git` and `gh` on `PATH`. Require the working directory to resolve to an accessible Git repository with a named `HEAD` branch.
-2. Inspect applicable repository instructions and contribution files. Preserve explicit base-branch, branch-naming, validation, and PR-template conventions.
-3. Reject unresolved conflicts and any merge, rebase, cherry-pick, or revert operation in progress. Do not attempt automatic recovery.
-4. Identify every staged, unstaged, untracked, and deleted path with `git status --porcelain=v1 --untracked-files=all`.
-5. Resolve the intended GitHub host, target `OWNER/REPO`, GitHub default branch, base ref, push remote, and fork head owner. Use `gh repo view` and the inspection process from `$gh-create-pr`; do not assume `origin` or `main` when evidence says otherwise.
-6. Require `gh auth status --hostname <host>` and `gh repo view <target> --json nameWithOwner,defaultBranchRef,url` to succeed. Require `git ls-remote` to reach the relevant Git remote. Never print or inspect token values.
+1. Confirm that `git` and `gh` are available, the directory is a Git repository, and `HEAD` is attached to a named branch.
+2. Read repository instructions, contribution files, pull request templates, ownership rules, and release notes that apply to the change.
+3. Reject unresolved conflicts and an in-progress merge, rebase, cherry-pick, or revert. Do not repair these states automatically.
+4. Record every staged, unstaged, deleted, untracked, and unmerged path with `git status --porcelain=v1 --untracked-files=all`.
+5. Resolve the GitHub host, target `OWNER/REPO`, default branch, base ref, push remote, and fork head owner. Use `gh repo view` and `$gh-create-pr`; do not assume `origin` or `main` without evidence. Never inspect token values.
+6. Require `gh auth status --hostname <host>`, `gh repo view <target> --json nameWithOwner,defaultBranchRef,url`, and `git ls-remote <push-remote>` to succeed. Do not inspect token values.
 7. Require the target repository, base branch, push remote, and head owner to be unambiguous. For a fork, use the fork as the push remote and the upstream repository as the PR target.
-8. Fetch the target base after authentication and remote checks so committed changes are compared against current remote state. Prefer an unambiguous configured target remote; otherwise fetch the target clone URL and preserve `FETCH_HEAD` as the comparison ref. Record the exact base ref for `$gh-create-pr`. Do not update a local branch, pull, merge, or rebase.
-9. Verify that the current `HEAD` is not behind `<base-ref>` using `git rev-list --left-right --count <base-ref>...HEAD`. If it is behind, stop before branch creation and ask the user to update the source branch; do not merge or rebase automatically. Stop as well when the refs have no usable merge base.
-10. Inspect the complete work that would enter the PR: run `git -P diff HEAD`, read every untracked path, and inspect `git -P diff <base-ref>...HEAD`, name status, and commit log. If output truncates, continue path by path until every change is covered.
-11. Determine whether work exists from both sources:
-   - **Uncommitted work:** the porcelain status is non-empty.
-   - **Committed work:** `HEAD` contains at least one commit not in the resolved base ref and the three-dot diff contains at least one changed path.
-12. If neither source contains work, stop without mutation and tell the user there are no changes to submit.
+8. Fetch the target base only after authentication and remote checks. Prefer the resolved target remote; otherwise fetch the target clone URL and retain `FETCH_HEAD` as the comparison ref. Record the exact base ref for `$gh-create-pr`. Do not pull, merge, rebase, update a local branch, or move a local branch.
+9. Compare the current `HEAD` with the resolved base using `git rev-list --left-right --count <base-ref>...HEAD`. Stop when `HEAD` is behind the base or no usable merge base exists.
+10. Inspect the complete submitted work: `git -P diff HEAD`, every untracked path, `git -P diff <base-ref>...HEAD`, name status, and commit log. Continue path by path if output is truncated.
+11. Require either a non-empty working tree or at least one changed commit and path in `<base-ref>...HEAD`. Stop without mutation when there is no work to submit.
 
-Stop on any failed or ambiguous precondition and report the exact check that failed plus the minimum user action needed to continue. Do not create a partial workflow when preflight already proves that the PR cannot be completed.
+Report the exact failed check and the minimum user action when any precondition is missing or ambiguous.
 
-## Create A New Branch
+## Create The Branch
 
-1. Apply `$git-branch-governance` and the repository's existing conventions to choose one short-lived work-branch name. Use its standard `<type>/<work-item>-<short-description>` grammar only when the repository has no documented equivalent.
-2. Infer the narrowest supported type and description from the complete diff. Use `feature/`, `fix/`, `docs/`, `refactor/`, `test/`, or `chore/` as appropriate. Never use personal names, secrets, `changes`, `update`, or another generic description.
-3. Keep the name lowercase, use only the syntax allowed by the governing convention, and prefer at most 60 characters. Check both local refs and `git ls-remote --heads <push-remote>`; if the name exists, derive another specific name and never overwrite or reuse it.
-4. Before creating the local branch, run a non-mutating `git push --dry-run <push-remote> HEAD:refs/heads/<branch>` to validate remote authentication, branch-name rules, and likely push permission. Stop on failure. A dry run is not permission to perform the actual push early.
-5. Create the new branch at the current `HEAD` with `git switch -c <branch>`. This preserves already-committed work and any working-tree changes. Do not reset the source branch or move commits between branches.
-6. Verify that `HEAD` is attached to the new branch before continuing.
+1. Apply `$git-branch-governance` and repository naming rules to choose one short-lived branch name.
+2. Use a specific lowercase type and description such as `feature/`, `fix/`, `docs/`, `refactor/`, `test/`, or `chore/`. Do not use personal names, secrets, `changes`, `update`, or another generic label.
+3. Check local refs and `git ls-remote --heads <push-remote>`. Choose another specific name if the candidate already exists. Prefer a maximum length of 60 characters.
+4. Run `git push --dry-run <push-remote> HEAD:refs/heads/<branch>` before creating the branch. Stop if the check fails.
+5. Create the branch with `git switch -c <branch>` and verify that `HEAD` now names it. Preserve all existing commits and working-tree changes.
 
 ## Commit Uncommitted Work
 
-If uncommitted work was found during preflight:
+When preflight found uncommitted changes:
 
-1. Invoke the selected commit skill in its explicit **commit mode**. Tell it to auto commit the complete inspected working tree. Do not request only a message and do not reproduce its message-generation rules locally.
-2. Require the selected skill to inspect all changes, stage the complete reviewed change set, and create one local commit with its generated message. It must not push.
-3. Verify that the commit succeeded, record its full SHA and subject, and require a clean working tree before PR creation. If hooks fail or files remain changed, stop before push and report the state without bypassing hooks or discarding changes.
+1. Invoke the selected commit skill in its explicit commit mode and request one commit for the complete inspected working tree.
+2. Let that skill inspect, stage, and commit the full reviewed change set. Do not recreate its message rules here, request only a message, or let it push.
+3. Verify the commit SHA and subject, then require a clean working tree. Stop if hooks fail or any path remains changed; do not bypass hooks or discard changes.
 
-If the tree was already clean and committed work exists, preserve the existing commits and do not create an empty or synthetic commit. The commit-language skill is not invoked on this path.
+When the tree was clean and committed work exists, preserve the existing commits and do not create an empty commit.
 
-After either path, require a clean working tree and at least one changed path plus one commit in `<base-ref>...HEAD`. Stop if the branch would produce an empty PR.
+After either path, require a clean working tree, one changed path, and one commit in `<base-ref>...HEAD`. Stop before push if the branch would create an empty PR.
 
 ## Create And Verify The PR
 
-1. Invoke `$gh-create-pr` in **Create PR** mode for the new branch. Explicitly request its ordinary push and PR-creation workflow; do not stop after drafting metadata.
-2. Pass the resolved target repository, base branch, base ref, push remote, and fork-qualified head when applicable. Let `$gh-create-pr` inspect the complete committed branch diff and repository PR template.
-3. Create a ready PR by default. Use a draft only when the user explicitly requests one or the repository's requirements make the work intentionally not review-ready.
-4. Never force-push. If a non-fast-forward push is rejected, stop and report it.
-5. Let `$gh-create-pr` reject duplicate PRs and verify the created PR by reading it back. Do not create a second PR when one already exists.
+1. Invoke `$gh-create-pr` in Create PR mode with the resolved repository, base branch, base ref, push remote, and fork-qualified head when needed.
+2. Let `$gh-create-pr` inspect the committed diff, repository template, duplicate PRs, and GitHub authentication.
+3. Create a ready PR unless the user explicitly requests a draft or repository evidence requires a draft.
+4. Use an ordinary push only. Stop on a non-fast-forward rejection and never force-push.
+5. Read the created PR back and verify its URL, open state, exact title and body, base, head, draft state, commit count, and observed checks. Do not create a second PR.
 
-## Handle Failures
+## Handle Partial Completion
 
-- Before branch creation, fail without mutations.
-- After branch creation or commit, preserve all completed local work. Do not roll back, delete the branch, reset, or amend.
-- If push succeeds but PR creation or verification fails, report the published branch and the failure. Do not delete the remote branch.
-- Never claim that a commit, push, PR, or check succeeded unless the corresponding command or GitHub read-back confirms it.
+- Fail before branch creation when preflight fails.
+- Preserve a branch or commit already created. Do not delete, reset, amend, or roll it back automatically.
+- If push succeeds but PR creation or verification fails, report the published branch and exact failure. Do not delete the remote branch.
+- State only results confirmed by commands or GitHub read-back.
 
-## Summarize The Result
+## Report
 
-Report the final outcome with the repository, base and head branches, created branch name, commit language, commit SHA and subject or preserved commit count, push remote, PR URL, draft state, and observed check status. Also report any remaining local changes or partial completion. Keep the summary concise and never expose credentials.
+Report the repository, base branch, head branch, created branch, commit language, commit SHA and subject or preserved commit count, push remote, PR URL, draft state, observed check status, and remaining local changes. Keep the report factual and concise. Do not expose credentials.
+
+## Communication Rules
+
+- Name exact paths, commands, Git refs, API calls, and observed results.
+- Use direct, restrained language. Do not add greetings, small talk, jokes, emojis, emotional wording, or sign-offs.
+- Do not use undefined jargon or invented terminology. When writing Chinese, avoid `链路`, `闭环`, `沉淀`, `抓手`, `护栏`, `赋能`, `编排`, `对齐`, and `打通` unless one is a defined technical term required by the task.
+- Report only actions performed, results observed, failures, and necessary next steps. Never claim that a commit, push, PR, or check succeeded without evidence.

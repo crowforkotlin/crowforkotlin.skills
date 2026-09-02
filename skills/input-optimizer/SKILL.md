@@ -1,45 +1,45 @@
 ---
 name: input-optimizer
-description: Refines user prompts and inputs by removing colloquialisms, eliminating abstract metaphors, and ensuring rigorous, direct, and professional expression. Use when user text contains conversational filler, overly complex jargon, vague analogies, or indirect phrasing.
+description: Rewrite user prompts into concise, direct, concrete instructions while preserving the original intent, facts, constraints, and requested output. Use when a prompt contains greetings, filler, indirect requests, undefined jargon, abstract wording, vague scope, or tangled sentence structure. Do not use this skill to execute the request unless the user also asks for execution.
 license: MIT
 ---
 
-# Input Optimization Standard
+# Input Optimization
 
-This skill provides explicit procedures to analyze and optimize raw user text into clear, professional, and direct prompt instructions.
+Rewrite the supplied user text into a clear prompt that another agent or engineer can execute without guessing.
 
-## Operational Objectives
-1. Remove all conversational filler, introductory remarks, and casual/colloquial phrasing.
-2. Eliminate highly abstract vocabulary, complex theoretical metaphors, and convoluted sentence structures.
-3. Replace indirect instructions with explicit, imperative, and actionable commands.
+## Preserve The Request
 
-## Optimization Protocol
+- Keep the original objective, facts, constraints, files, values, dates, technologies, and requested output.
+- Keep the input language unless the user requests another language.
+- Do not add requirements, rationale, facts, acceptance criteria, or technical choices that the input does not support.
+- Do not perform the requested implementation. Return the rewritten prompt unless the user asks for analysis or execution as a separate action.
 
-### 1. Analysis and Filtering
-- Scan the text for conversational phrases (e.g., "Could you please", "I was wondering if", "Hey there"). Delete them completely.
-- Identify words that describe highly abstract or subjective concepts without concrete reference points.
-- Identify multi-clause sentences that hide the main objective.
+## Rewrite Procedure
 
-### 2. Rewriting and Restructuring
-- Convert indirect statements into direct requests.
-- Use explicit terminology rather than figurative analogies.
-- Ensure sentence structure follows a direct Subject-Verb-Object pattern where possible to maintain professional rigor.
+1. Extract the main action, target, constraints, deliverables, and validation requirements.
+2. Remove greetings, apologies, social filler, hedging, repetition, and sign-offs.
+3. Replace indirect requests with imperative commands.
+4. Replace metaphors, undefined jargon, and subjective wording with specific actions or measurable conditions. Avoid invented terms.
+5. Split long sentences into short statements. Put prerequisites before actions and acceptance conditions after actions.
+6. Preserve important uncertainty instead of silently resolving it. State a missing choice as an explicit question only when the original request requires it.
+7. Return one optimized prompt, not multiple alternatives.
 
-## Direct Reference Transformations
+When rewriting Chinese text, avoid these undefined buzzwords unless they are exact defined technical terms: `链路`, `闭环`, `沉淀`, `抓手`, `护栏`, `赋能`, `编排`, `对齐`, and `打通`.
 
-### Example 1: Eliminating Conversational Phrase
-* **Input:** "Hey, I need you to kind of look over this draft and make it look a bit better if you don't mind."
-* **Optimized Output:** "Review and optimize the provided text draft for clarity and structure."
+## Examples
 
-### Example 2: Removing Abstract or Complex Concepts
-* **Input:** "We need to synergize our multi-dimensional paradigms to create a holistic ecosystem for user onboarding."
-* **Optimized Output:** "Standardize and simplify the user onboarding process sequence."
+Input: `Hey, I need you to kind of look over this draft and make it look a bit better if you don't mind.`
 
-### Example 3: Changing Indirect Request to Explicit Command
-* **Input:** "It would be great if the report could eventually show some numbers about sales from last week."
-* **Optimized Output:** "Extract and display the previous week's sales performance metrics in the report."
+Output: `Review and optimize the provided text draft for clarity and structure.`
 
-## Execution Rules
-- Do not add conversational greetings or sign-offs in the final response.
-- Do not interpret or add external meaning beyond the core intent of the user's input.
-- Output the optimized result immediately and directly.
+Input: `It would be great if the report could eventually show some numbers about sales from last week.`
+
+Output: `Extract and display the previous week's sales metrics in the report.`
+
+## Output Rules
+
+- Output the optimized prompt immediately and directly.
+- Do not add a greeting, explanation, sign-off, or evaluation unless requested.
+- Keep commands, paths, identifiers, and quoted user text exact.
+- Make every required action and expected result explicit and verifiable.

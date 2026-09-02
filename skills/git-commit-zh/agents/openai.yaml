@@ -1,0 +1,4 @@
+interface:
+  display_name: "Chinese Git Commit"
+  short_description: "Generate or create one precise Chinese Git commit"
+  default_prompt: "Use $git-commit-zh to inspect the current changes and write one precise Chinese Git commit message."

@@ -8,9 +8,19 @@ AI 技能（Skills）管理仓库 — 收集、安装、部署技能到各 AI �
 .
 ├── skills.sh                 # 部署管理器（复制 + 软链接）
 ├── skills/                   # 技能目录
-│   ├── git-commit-en/SKILL.md
-│   ├── git-commit-zh/SKILL.md
-│   ├── git-branch-governance/SKILL.md
+│   ├── direct-engineering-communication/
+│   │   ├── SKILL.md
+│   │   └── agents/openai.yaml
+│   ├── git-commit-en/
+│   │   ├── SKILL.md
+│   │   └── agents/openai.yaml
+│   ├── git-commit-zh/
+│   │   ├── SKILL.md
+│   │   └── agents/openai.yaml
+│   ├── git-branch-governance/
+│   │   ├── SKILL.md
+│   │   ├── agents/openai.yaml
+│   │   └── references/
 │   ├── gh-commit-pr/
 │   │   ├── SKILL.md
 │   │   └── agents/openai.yaml
@@ -18,7 +28,9 @@ AI 技能（Skills）管理仓库 — 收集、安装、部署技能到各 AI �
 │   │   ├── SKILL.md
 │   │   ├── agents/openai.yaml
 │   │   └── scripts/
-│   └── input-optimizer/SKILL.md
+│   └── input-optimizer/
+│       ├── SKILL.md
+│       └── agents/openai.yaml
 └── scripts/
     ├── install-skill.sh      # 从 GitHub/本地安装技能
     └── skills-links.sh       # 原始链接脚本（已整合到 skills.sh）

@@ -1,32 +1,33 @@
 ---
 name: gh-create-pr
-description: Inspect committed Git branch changes, generate accurate GitHub pull request titles and bodies, push the current branch, create draft or ready PRs with GitHub CLI, and verify the resulting metadata. Use when the user asks to draft PR information, open/create/submit a GitHub PR, push a branch for a PR, or check PR readiness. Do not use for commit-message-only requests, code review, merging PRs, or branch-policy design.
+description: Inspect committed Git branch changes, draft accurate GitHub pull request metadata, push the current branch, create a draft or ready pull request with GitHub CLI, and verify the returned metadata. Use when the user asks to draft, open, create, submit, publish, or update a GitHub PR, push a branch for a PR, or check PR readiness. Do not use for commit-message-only work, code review, merging, or branch-policy design.
 ---
 
 # Create GitHub Pull Requests
 
-Build PR metadata from the complete committed branch diff, then create and verify the PR only when the user requests that external action.
+Build pull request metadata from the complete committed branch diff. Keep metadata-only work read-only. Push and create a PR only when the user explicitly requests that action.
 
-## Select The Mode
+## Select A Mode
 
-- **Draft metadata:** When the user asks for a title, description, summary, or preview, stay read-only and output the proposed PR information.
-- **Create PR:** When the user asks to open, create, submit, or publish a PR, ordinary push of the current branch and `gh pr create` are in scope.
-- **Update existing PR:** Change an existing PR only when the user explicitly asks for an update. Never silently replace its title or body.
+- **Draft metadata:** Return one proposed title and one complete body. Do not push or run a mutating `gh` command.
+- **Create PR:** Inspect, push the current branch with an ordinary non-force push, create one PR, and verify it.
+- **Update existing PR:** Change an existing PR only when the user explicitly requests the change. Preserve fields the user did not ask to change.
 
-Do not commit, amend, rebase, force-push, merge, close, delete branches, add reviewers, enable auto-merge, or change repository settings unless the user separately requests that action.
+Do not commit, amend, rebase, force-push, merge, close, delete branches, add reviewers, enable auto-merge, or change repository settings unless separately requested.
 
 ## Inspect The Repository
 
-1. Read applicable repository instructions and contribution files before acting. Inspect `AGENTS.md`, `CONTRIBUTING*`, `.github/PULL_REQUEST_TEMPLATE*`, ownership files, and release documentation when present.
-2. Resolve the base branch from the user's request. Otherwise use the repository's GitHub default branch. Do not assume `main`.
-3. Run the bundled read-only inspector from the skill directory:
+1. Read `AGENTS.md`, `CONTRIBUTING*`, `.github/PULL_REQUEST_TEMPLATE*`, ownership files, release documentation, and other applicable repository instructions.
+2. Resolve the requested base branch. Otherwise use the GitHub default branch returned by the repository, not an assumed name.
+3. Run the bundled read-only inspector from this skill directory:
 
    ```bash
    python3 scripts/inspect-pr-context.py --repo /absolute/path/to/repository --base <base>
    ```
 
-   Omit `--base` when it should discover the GitHub default branch. Read the complete JSON output.
-4. Inspect the complete committed PR patch:
+   Omit `--base` when the inspector should discover the GitHub default branch. Read the complete JSON output.
+4. Require a named non-default current branch and a clean working tree for PR creation. A dirty tree means the PR would omit local changes; stop and report it.
+5. Inspect every committed change with:
 
    ```bash
    git -P diff <base-ref>...HEAD
@@ -34,29 +35,25 @@ Do not commit, amend, rebase, force-push, merge, close, delete branches, add rev
    git log --format=fuller <base-ref>..HEAD
    ```
 
-   If output truncates, read the diff one changed path at a time until every path is covered. PR content comes from `<base-ref>...HEAD`, not from uncommitted working-tree changes.
-5. Inspect recent merged PR titles when repository naming conventions are unclear:
+   Read each changed path separately when output is truncated. PR metadata must describe `<base-ref>...HEAD`, not uncommitted files.
+6. Require at least one commit and one changed path ahead of the base. Inspect recent merged PR titles with `gh pr list --state merged --limit 20 --json title` only when repository naming conventions are unclear.
 
-   ```bash
-   gh pr list --state merged --limit 20 --json title
-   ```
+## Check Creation Preconditions
 
-## Enforce Preconditions
-
-Before creating a PR, require all of the following:
+Before creating a PR, confirm all of the following:
 
 - The checkout is a Git repository on a named non-default branch.
-- The working tree has no staged, unstaged, untracked, or unmerged changes. Stop rather than creating a PR that omits local work.
-- The branch contains at least one commit not in the base branch.
+- The working tree has no staged, unstaged, untracked, or unmerged changes.
+- The branch contains a commit and a changed path not present in the base.
 - `gh auth status` succeeds for the intended GitHub host.
 - The target repository, base branch, push remote, and head branch are unambiguous.
-- No open PR already uses the same target repository and head branch.
+- No open PR already uses the same target repository, base, and head owner/branch.
 
-If an open PR already exists, return its URL and current state. Do not create a duplicate. If the repository is a fork, explicitly resolve the upstream `OWNER/REPO`, push remote, and `OWNER:branch` head; ask only when local evidence cannot resolve them safely.
+For a fork, resolve the upstream target, fork push remote, and `OWNER:branch` head explicitly. Ask the user only when local Git and GitHub evidence cannot resolve them safely. If an open PR exists, return its URL and current state instead of creating another one.
 
-## Generate Metadata
+## Draft Metadata
 
-Prefer the repository's PR template and preserve its required headings. Otherwise use:
+Use the repository's PR template and required headings. Without a template, use:
 
 ```markdown
 ## Summary
@@ -69,23 +66,22 @@ Prefer the repository's PR template and preserve its required headings. Otherwis
 - `<command actually run>`
 ```
 
-Generate metadata with these rules:
+Apply these rules:
 
 - Use the user's explicit title when provided.
-- For one coherent commit, prefer its subject when it accurately describes the complete PR.
-- Otherwise infer one concise title from the patch and commit range, following observed repository conventions.
-- Describe behavior, contracts, migrations, and user impact; do not turn the summary into a filename inventory.
-- Add 2-5 summary bullets supported by the patch.
-- List only validation commands actually observed in the current task or explicitly supplied by the user. If none ran, say `Not run (not requested)`.
-- Include issue links, breaking-change notices, rollout notes, or screenshots only when evidence requires them.
+- Use the single commit subject when it accurately describes the whole change; otherwise infer one concise title from the patch and commit range.
+- Describe behavior, contracts, migrations, and user impact. Do not produce a filename inventory.
+- Include 2-5 summary bullets supported by the patch.
+- List only validation commands actually run or explicitly supplied by the user. Use `Not run (not requested)` when none ran.
+- Add issue links, breaking-change notices, rollout notes, or screenshots only when the evidence requires them.
 - Never claim approval, CI success, compatibility, or test coverage without observing it.
-- Scan proposed metadata for credentials, tokens, private paths, email addresses, and unrelated local details before publishing.
+- Remove credentials, tokens, private paths, email addresses, and unrelated local details before publishing.
 
-In metadata-only mode, output exactly one proposed title and one complete body. Do not push or call a mutating `gh` command.
+In metadata-only mode, output exactly one title and one complete body.
 
 ## Create The PR
 
-Use the bundled creator after metadata is finalized. It rejects dirty/default branches, duplicate PRs, empty bodies, and non-fast-forward pushes; it never force-pushes.
+After metadata is final, run the bundled creator from this skill directory:
 
 ```bash
 python3 scripts/create-pr.py \
@@ -100,22 +96,33 @@ python3 scripts/create-pr.py \
   --push
 ```
 
-Add `--draft` only when requested or when the PR is intentionally not review-ready. Use `--dry-run` to preview the commands without network writes. Use `--base-ref upstream/main` when the target base is not available as `origin/<base>` or a local branch. Omit `--repo-slug`, `--base-ref`, `--remote`, or `--head` only when their defaults are unambiguous.
+Add `--draft` only when requested or required by the repository. Use `--dry-run` to validate local state and print commands without network writes. Use an explicit `--base-ref` such as `upstream/main` when the target base is not available as `origin/<base>` or a local branch. Omit optional arguments only when their defaults are unambiguous.
 
 ## Verify The Result
 
-After creation, read the PR back with `gh pr view` and verify:
+After creation, run `gh pr view` and verify:
 
 - URL and open state
 - exact title and non-empty body
-- base and head branches
+- base and head branches and head owner
 - draft state
 - commit count
 - current check status
 
-If a newly created PR has incorrect or missing metadata, correct that same PR and verify it again. Report the PR URL, base/head, draft state, and observed checks. Do not wait for CI unless the user asks.
+If a PR created in this invocation has incorrect or missing metadata, correct that same PR and read it back again. Do not wait for CI unless the user requests it.
+
+## Report
+
+Lead with the result. Report the PR URL, repository, base/head, draft state, commit count, observed checks, validation commands, and any failure or remaining change. Use only observed facts and do not expose credentials.
+
+## Communication Rules
+
+- Name exact paths, commands, Git refs, API calls, and observed results.
+- Use direct, restrained language. Do not add greetings, small talk, jokes, emojis, emotional wording, or sign-offs.
+- Do not use undefined jargon or invented terminology. When writing Chinese, avoid `链路`, `闭环`, `沉淀`, `抓手`, `护栏`, `赋能`, `编排`, `对齐`, and `打通` unless one is a defined technical term required by the task.
+- Report only actions performed, results observed, failures, and necessary next steps. Never claim that a PR, push, check, or metadata update succeeded without evidence.
 
 ## Bundled Scripts
 
-- `scripts/inspect-pr-context.py`: Read-only JSON inspection of Git, GitHub, branch, diff, dirty-tree, and existing-PR context.
-- `scripts/create-pr.py`: Guarded branch push, PR creation, and read-back verification with structured JSON output.
+- `scripts/inspect-pr-context.py`: Return JSON for Git, GitHub, branch, diff, dirty-tree, remote, and existing-PR state without changing the repository.
+- `scripts/create-pr.py`: Validate a clean branch, optionally push it, create one PR, reject duplicates, and verify returned metadata.

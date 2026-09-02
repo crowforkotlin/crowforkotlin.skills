@@ -1,0 +1,4 @@
+interface:
+  display_name: "English Git Commit"
+  short_description: "Generate or create one precise English Git commit"
+  default_prompt: "Use $git-commit-en to inspect the current changes and write one precise English Git commit message."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Input Optimizer"
+  short_description: "Rewrite prompts into direct, concrete instructions"
+  default_prompt: "Use $input-optimizer to rewrite the provided prompt into direct, concrete, verifiable instructions."
