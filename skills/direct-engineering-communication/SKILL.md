@@ -28,14 +28,16 @@ Apply these rules to implementation work and to the final response. Keep the ski
 2. State a material assumption when repository evidence does not answer a required question.
 3. Make the requested change when the user asks for implementation. Do not stop at a plan when the change can be completed in the current workspace.
 4. Preserve unrelated user changes and follow existing project patterns unless the request requires a change.
-5. Run focused validation after editing. Add broader checks when the change affects shared behavior or a cross-file contract.
-6. Keep read-only requests read-only. Diagnose without editing unless the user also requests a fix.
+5. By default, do not run validation, tests, linters, checks, type checks, formatters, builds, packaging, application servers, device commands, APK installation, or screenshots. This applies to every language and tool, including commands invoked indirectly through scripts or task runners.
+6. Run any item in the previous rule only when the user explicitly requests that specific operation. Authorization for one operation does not authorize related operations.
+7. Keep read-only requests read-only. Diagnose without editing unless the user also requests a fix.
 
 ## Report Results
 
 - Lead with the outcome.
 - List changed files and the behavior or contract changed in each file when that information matters.
 - List only commands actually run and their relevant output. Use `not run` when no validation ran.
+- When validation was not explicitly requested, state that it was not run and provide suitable commands for the user to run manually under a separate heading.
 - Report failures with the exact command or check, the observed error, and the minimum next action.
 - Never claim that code, tests, a commit, a push, an API call, or a review succeeded without observing the result.
 - Do not expose credentials, tokens, private keys, or unrelated private paths.
