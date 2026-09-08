@@ -17,17 +17,17 @@ Do not commit, amend, rebase, force-push, merge, close, delete branches, add rev
 
 ## Inspect The Repository
 
-1. Read `AGENTS.md`, `CONTRIBUTING*`, `.github/PULL_REQUEST_TEMPLATE*`, ownership files, release documentation, and other applicable repository instructions.
-2. Resolve the requested base branch. Otherwise use the GitHub default branch returned by the repository, not an assumed name.
-3. Run the bundled read-only inspector from this skill directory:
+1. Resolve the requested base branch. Otherwise use the GitHub default branch returned by the repository, not an assumed name.
+2. Run the bundled read-only inspector from this skill directory:
 
    ```bash
    python3 scripts/inspect-pr-context.py --repo /absolute/path/to/repository --base <base>
    ```
 
    Omit `--base` when the inspector should discover the GitHub default branch. Read the complete JSON output.
-4. Require a named non-default current branch and a clean working tree for PR creation. A dirty tree means the PR would omit local changes; stop and report it.
-5. Inspect every committed change with:
+
+3. Require a named non-default current branch and a clean working tree for PR creation. A dirty tree means the PR would omit local changes; stop and report it.
+4. Inspect every committed change with:
 
    ```bash
    git -P diff <base-ref>...HEAD
@@ -36,7 +36,8 @@ Do not commit, amend, rebase, force-push, merge, close, delete branches, add rev
    ```
 
    Read each changed path separately when output is truncated. PR metadata must describe `<base-ref>...HEAD`, not uncommitted files.
-6. Require at least one commit and one changed path ahead of the base. Inspect recent merged PR titles with `gh pr list --state merged --limit 20 --json title` only when repository naming conventions are unclear.
+
+5. Require at least one commit and one changed path ahead of the base. Inspect recent merged PR titles with `gh pr list --state merged --limit 20 --json title` only when repository naming conventions are unclear.
 
 ## Check Creation Preconditions
 
