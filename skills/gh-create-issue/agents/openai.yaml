@@ -1,0 +1,4 @@
+interface:
+  display_name: "Report Verifiable GitHub Issue"
+  short_description: "Draft and file English GitHub issues with runnable repro commands"
+  default_prompt: "Use $gh-create-issue to inspect the code, confirm the defect with a command, and file one English issue with a severity level and reproducible steps."

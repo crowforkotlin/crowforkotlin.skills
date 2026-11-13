@@ -28,6 +28,12 @@ AI 技能（Skills）管理仓库 — 收集、安装、部署技能到各 AI �
 │   │   ├── SKILL.md
 │   │   ├── agents/openai.yaml
 │   │   └── scripts/
+│   ├── gh-create-issue/
+│   │   ├── SKILL.md
+│   │   ├── agents/openai.yaml
+│   │   ├── assets/issue-template.md
+│   │   ├── references/
+│   │   └── scripts/check-issue-body.py
 │   └── input-optimizer/
 │       ├── SKILL.md
 │       └── agents/openai.yaml
