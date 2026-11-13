@@ -7,8 +7,8 @@ sentences. Name the component and the failing call.>
 
 ## Location
 
-- `<path>:<line>` — `<symbol or expression at that line>`.
-- `<path>:<line>` — `<symbol or expression at that line>`.
+- `<path>:<line>`: `<symbol or expression at that line>`.
+- `<path>:<line>`: `<symbol or expression at that line>`.
 
 ## Reproduction
 

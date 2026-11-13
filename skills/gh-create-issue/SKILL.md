@@ -38,14 +38,15 @@ a linked issue.
 
 ## Choose The Severity
 
-Read [references/severity-levels.md](references/severity-levels.md). Summary:
+Read [references/severity-levels.md](references/severity-levels.md). Judge the
+reach of the defect first, then the trigger. Summary:
 
-| Level | Use when |
+| Level | Reach |
 | --- | --- |
-| `critical` | Data loss, corrupted output, or a security bypass reachable by default. |
-| `high` | A documented feature fails for every user, with no workaround. |
-| `medium` | Wrong or unsafe behavior in a specific configuration, or a workaround exists. |
-| `low` | Diagnostics, documentation, latent hazard, or a defect that fails closed. |
+| `critical` | Core functionality unusable, severe data damage, a security violation, or a system-wide failure. |
+| `high` | Core functionality, a critical runtime flow, or a compatibility contract breaks; no workaround. |
+| `medium` | Part of the functionality, one scenario, or one platform breaks; a workaround exists. |
+| `low` | Edge cases, misleading diagnostics, documentation drift, or non-core paths. |
 
 A defect that fails closed (rejects input it should accept) is `low`. A defect
 that fails open (accepts input it should reject) is at least `medium`.
