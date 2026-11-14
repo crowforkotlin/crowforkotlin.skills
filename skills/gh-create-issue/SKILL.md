@@ -1,6 +1,6 @@
 ---
 name: gh-create-issue
-description: Draft, create, or update GitHub issues in English with reproducible commands and an explicit severity level. Use when the user asks to report, file, open, write, or rewrite a bug, defect, regression, or design gap, or asks for an issue template, severity scale, or reproduction steps for an issue. Produces bodies whose every claim is backed by a command the reporter ran, whose commands work in zsh and bash, and whose prose avoids abstract or filler wording. Do not use for pull requests, commits, or code review.
+description: Draft, create, or update GitHub issues in English with reproducible commands, an explicit severity level, and appropriate existing labels. Use when the user asks to report, file, open, write, rewrite, or label a bug, defect, regression, or design gap, or asks for an issue template, severity scale, or reproduction steps for an issue. Produces bodies whose every claim is backed by a command the reporter ran, whose commands work in zsh and bash, and whose prose avoids abstract or filler wording. Do not use for pull requests, commits, or code review.
 ---
 
 # Report Verifiable GitHub Issues
@@ -11,11 +11,15 @@ output; drop everything else.
 
 ## Select A Mode
 
-- **Draft**: return one title and one complete body. Do not call a mutating
-  `gh` command.
-- **Create**: create exactly one issue after the body passes the checks below.
+- **Draft**: return one title, one complete body, and proposed labels. Do not
+  call a mutating `gh` command.
+- **Create**: create exactly one issue after the body passes the checks below,
+  with the applicable existing labels selected below.
 - **Update**: replace the body of an existing issue. Keep its title and
-  labels unless the user asked to change them.
+  labels unless the user asked to change them; preserve its state.
+- **Label Only**: add applicable existing labels to the issues the user
+  specified. Preserve their titles, bodies, states, and existing labels.
+  Do not rewrite bodies or run the body checker for this mode.
 
 Do not close, label, assign, or comment on other issues unless asked.
 
@@ -50,6 +54,29 @@ reach of the defect first, then the trigger. Summary:
 
 A defect that fails closed (rejects input it should accept) is `low`. A defect
 that fails open (accepts input it should reject) is at least `medium`.
+
+## Choose Existing Labels
+
+Read the repository's label names and descriptions before selecting labels:
+
+```bash
+gh label list --repo <owner>/<repo> --limit 100 --json name,description
+```
+
+- For a confirmed bug, apply the existing `bug` label or the repository's
+  equivalent defect label when creating the issue. A separate label request
+  is not required for a new issue.
+- For a design gap, enhancement, or documentation issue, choose the existing
+  label whose description matches the report; do not classify it as `bug`
+  without evidence of a defect.
+- Add area, platform, or severity labels only when they already exist and
+  their meanings match the report. The severity in the body remains required.
+- If no suitable label exists, report that fact rather than choosing an
+  unrelated label. Do not create, rename, or delete repository labels unless
+  the user requests it.
+- Before labeling an existing issue, read its labels and state. Add labels
+  rather than replacing the label set, and retain a closed issue's state.
+  Remove an existing label only when the user requests that removal.
 
 ## Write Reproduction Commands
 
@@ -109,16 +136,31 @@ Fix every reported line, then run it again.
 
 ```bash
 gh auth status
-gh issue create --repo <owner>/<repo> --title '<title>' --body-file issue.md
+gh issue create --repo <owner>/<repo> --title '<title>' --body-file issue.md --label '<existing-label>'
 gh issue edit <number> --repo <owner>/<repo> --body-file issue.md
 ```
 
-After the call returns, read the issue back and confirm the posted body matches
-the file:
+Repeat `--label` for additional selected labels. Omit it only when no suitable
+existing label was found, and report that omission.
+
+For a label-only update, use an additive operation without `--body-file`:
 
 ```bash
-gh issue view <number> --repo <owner>/<repo> --json title,body --jq '.title, .body' | head -40
+gh issue edit <number> --repo <owner>/<repo> --add-label '<existing-label>'
 ```
 
-Report the issue URL. If the call fails, report the exact `gh` error and the
-body file path; do not claim the issue exists.
+With REST, `POST /repos/{owner}/{repo}/issues/{number}/labels` adds labels;
+`PUT` on that endpoint replaces the existing label set and is not an additive
+update.
+
+After the call returns, read the issue back. Confirm the selected labels are
+present and, for updates, the previous labels and state are preserved. For
+body changes, also confirm the full posted body matches the file:
+
+```bash
+gh issue view <number> --repo <owner>/<repo> --json number,url,title,body,labels,state
+```
+
+Report the issue URL and its observed labels and state. If the call fails,
+report the exact `gh` error and the body file path when applicable; do not
+claim creation or an update succeeded.
