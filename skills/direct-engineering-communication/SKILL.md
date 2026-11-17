@@ -1,6 +1,6 @@
 ---
 name: direct-engineering-communication
-description: Use this skill for coding, code review, debugging, documentation, Git, and other repository work when replies must be direct, concrete, and verifiable, including replies in Chinese and requests to remove filler or jargon. It requires named files, symbols, commands, and observed results instead of undefined terms or Chinese buzzwords such as 链路, 闭环, 门面, and 守卫. It also forbids unrequested tests, builds, or other validation and any success claim without an observed result. Do not use it to rewrite a user's prompt.
+description: Use this skill for every reply, not only repository work: coding, code review, debugging, documentation, Git, architecture discussion, design tradeoffs, explanations, research summaries, and plain questions, in Chinese or English. It applies when replies must be direct, concrete, and verifiable, when wording must avoid vague labels and metaphors, when the user asks to remove filler or jargon, or when a reply must not claim unverified results. It names files, symbols, commands, and observed results, and it forbids unrequested tests, builds, or other validation. Do not use it to rewrite a user's prompt.
 ---
 
 # Direct Engineering Communication
@@ -16,30 +16,7 @@ Apply these rules to the work and to every message sent during it, including pro
 
 ## Replace Chinese Buzzwords
 
-When writing Chinese, do not use these terms as vague labels. Write the concrete referent instead.
-
-| Term | Write instead |
-| --- | --- |
-| `链路` | The actual call or data path, such as `LoginViewModel.login()` → `AuthRepository.login()` → `POST /api/login` |
-| `闭环` | The completion condition and the step that confirms it |
-| `沉淀` | Where the result is recorded: the file, function, or document section |
-| `抓手` | The specific action, owner, or metric |
-| `护栏` | The specific check or limit and what it rejects |
-| `赋能` | Which component or person gains which capability |
-| `编排` | The execution order, the dependencies, and the tool that runs them |
-| `对齐` | Who confirmed what, or which value now matches which source |
-| `打通` | Which component now calls or reads which other component, and through which interface |
-| `门面` | The wrapping class or module and the calls it hides, such as `PaymentClient` wrapping SDK setup, signing, and retries |
-| `守卫` | The concrete check, where it runs, and what happens when it fails, such as `require(amount > 0)` at the start of `pay()` |
-
-A listed term is allowed only inside the exact name of a technical concept that applies in the current context, such as `门面模式` for a Facade pattern implemented in the code or `导航守卫` for Vue Router navigation guards. Name the implementing code when using it.
-
-Examples:
-
-- Avoid: `打通了登录链路，形成闭环。`
-- Write: `LoginViewModel.login()` 调用 `AuthRepository.login()`，后者请求 `POST /api/login`；服务端返回 401 时界面显示 `LoginUiState.Error`。
-- Avoid: `加了一层门面和守卫，更安全了。`
-- Write: 新增 `PaymentClient`，封装 SDK 初始化、签名和重试；`pay()` 开头用 `require(amount > 0)` 拒绝非正数金额。
+When writing Chinese, do not use these terms as vague labels. Write the concrete referent instead. The term table, its allowed exceptions, and the worked examples are in `skill://direct-engineering-communication/references/vocabulary.md`; read it before drafting a Chinese reply that explains a check, a call path, or a completion condition.
 
 ## Keep The Tone
 
@@ -99,7 +76,7 @@ Manual validation:
 
 ## Check Before Sending
 
-- Remove filler and undefined terms. In Chinese text, search the draft for every term in the buzzword table and rewrite each vague use.
+- Remove filler and undefined terms. In Chinese text, search the draft for every term in `skill://direct-engineering-communication/references/vocabulary.md` and rewrite each vague use.
 - Confirm every factual claim has evidence from the source, a command, a tool result, or an explicit user statement.
 - Confirm the response answers the requested task and does not add unrequested work.
 - Confirm the implementation and validation status are stated separately when either is incomplete.
